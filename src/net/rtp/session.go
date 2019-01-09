@@ -26,6 +26,7 @@ import (
     "net"
     "sync"
     "time"
+    "errors"
 )
 
 // Session contols and manages the resources and actions of a RTP session.
@@ -100,13 +101,6 @@ type RtcpTransmission struct {
     avrgPacketLength float64
 }
 
-// Returned in case of an error.
-type Error string
-
-func (s Error) Error() string {
-    return string(s)
-}
-
 // Specific control event type that signal that a new input stream was created.
 // 
 // If the RTP stack receives a data or control packet for a yet unknown input stream
@@ -170,7 +164,7 @@ func NewSession(tpw TransportWrite, tpr TransportRecv) *Session {
 //
 func (rs *Session) AddRemote(remote *Address) (index uint32, err error) {
     if (remote.DataPort & 0x1) == 0x1 {
-        return 0, Error("RTP data port number is not an even number.")
+        return 0, errors.New("RTP data port number is not an even number.")
     }
     rs.remotes[rs.remoteIndex] = remote
     index = rs.remoteIndex
@@ -200,10 +194,10 @@ func (rs *Session) RemoveRemote(index uint32) {
 //                If zero then the method generates a random starting sequence number according 
 //                to RFC 3550
 //
-func (rs *Session) NewSsrcStreamOut(own *Address, ssrc uint32, sequenceNo uint16) (index uint32, err Error) {
+func (rs *Session) NewSsrcStreamOut(own *Address, ssrc uint32, sequenceNo uint16) (index uint32, err error) {
 
     if len(rs.streamsOut) > rs.MaxNumberOutStreams {
-        return 0, Error("Maximum number of output streams reached.")
+        return 0, errors.New("Maximum number of output streams reached.")
     }
     str := newSsrcStreamOut(own, ssrc, sequenceNo)
     str.streamStatus = active
